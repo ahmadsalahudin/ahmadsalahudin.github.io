@@ -280,6 +280,7 @@
 
 <label for="cost">Cost:</label>
 <input type="text" id="cost" readonly><br><br>
+<p id="totalCost">Total Cost: $0.000000</p>
 
 
 <center><button onclick="showHistory()">Show History of Sent Prompts</button> <span><button onclick="showLog()">Show Log of Sent Results</button></center>
@@ -369,6 +370,8 @@
         // For the sake of this prototype, just showing a success label
         document.getElementById(apiElementId + 'Status').style.display = 'inline';
     }
+let totalCostAccumulated = 0; // This will store the total cost accumulated since the start of the session
+
 function sendPrompts() {
     const frequency = parseInt(document.getElementById('numPromptsToSend').value);
     generateTokensAndCost(frequency);
@@ -398,12 +401,14 @@ function generateTokensAndCost(frequency) {
         outputTokenCost = 0.004;
     }
 
-    const totalCost = (inputTokens * inputTokenCost + outputTokens * outputTokenCost) / 1000;
+    const currentCost = (inputTokens * inputTokenCost + outputTokens * outputTokenCost) / 1000;
+    totalCostAccumulated += currentCost; // Add the current cost to the total accumulated cost
 
     // Display the values
     document.getElementById('inputTokens').value = inputTokens;
     document.getElementById('outputTokens').value = outputTokens;
-    document.getElementById('cost').value = '$' + totalCost.toFixed(6); // Displaying cost with 6 decimal numbers
+    document.getElementById('cost').value = '$' + currentCost.toFixed(6); // Displaying cost with 6 decimal numbers
+    document.getElementById('totalCost').textContent = 'Total Cost: $' + totalCostAccumulated.toFixed(6); // Displaying total accumulated cost
 }
 
 // Rest of your functions remain unchanged...
