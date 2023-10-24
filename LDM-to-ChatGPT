@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Workflow Prototype</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #fafafa;
+        color: #333333;
+    }
+    .step {
+        border: 1px solid #e6e6e6;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+    }
+    button {
+        padding: 10px 15px;
+        margin: 10px 0;
+        border: none;
+        background-color: #125688;
+        color: #fafafa;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    button:hover {
+        background-color: #833ab4;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    table, th, td {
+        border: 1px solid #e6e6e6;
+    }
+    th, td {
+        padding: 10px;
+        text-align: left;
+    }
+    h1 {
+        text-align: center;
+        color: #125688;
+    }
+    h2 {
+        background-color: #125688;
+        color: #fafafa;
+        padding: 10px 15px;
+        border-radius: 5px;
+    }
+    p, select {
+        margin: 10px 0;
+    }
+    input, select {
+        padding: 5px 10px;
+        border: 1px solid #e6e6e6;
+        border-radius: 3px;
+    }
+    span {
+        margin-left: 10px;
+    }
+</style>
+
+</head>
+<body>
+
+<h1>App Workflow</h1>
+
+<div class="step">
+    <h2>Step 1: LDM API Connection</h2>
+   <p>Enter LDM API Key: <input type="password" id="ldmApiKey" placeholder="LDM API Key"> <button onclick="loadRandomAPI('ldmApiKey')">Load API</button> <span id="ldmApiKeyStatus" style="color:green; display:none;">Loaded Successfully!</span></p>
+    <p>Define input criteria:</p>
+    <ul>
+        <li>Client: 
+            <select id="client">
+                <option value="Client1">AlBorg Labs</option>
+                <option value="Client2">Alfa Labs</option>
+            </select>
+        </li>
+        <li>Test Category: 
+            <select id="testCategory">
+                <option value="Category1">Haematology</option>
+                <option value="Category2">Chemistry</option>
+            </select>
+        </li>
+       
+        </li>
+        <li>Test Profile: 
+            <select id="testProfile">
+                <option value="Profile1">Golden Check Profile</option>
+                <option value="Profile2">Lipid Profile</option>
+            </select>
+        </li>
+        <li>Number of Accessions: 
+            <select id="numAccessions">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40">40</option>
+                <option value="50">50</option>
+            </select>
+        </li>
+    </ul>
+    <center><button onclick="loadData()">Send Criteria Request</button></center>
+</div>
+
+<div class="step">
+  <h2>Received JSON Data</h2>
+<table id="jsonTable">
+    <thead>
+        <tr>
+            <th>Select</th>
+            <th>Client</th>
+            <th>Patient</th>
+            <th>Accession</th>
+            <th>Tests</th>
+            <th>View JSON</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Data will be populated here -->
+    </tbody>
+</table>
+</div>
+
+<div class="step">
+    <h2>Step 2: Prompt</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Content</th>
+            <th>Select</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Interpretation</td>
+            <td>Interpretation content...</td>
+            <td><button onclick="selectPrompt('Interpretation')">Select</button></td>
+        </tr>
+        <tr>
+            <td>Lifestyle</td>
+            <td>Lifestyle content...</td>
+            <td><button onclick="selectPrompt('Lifestyle')">Select</button></td>
+        </tr>
+        <tr>
+            <td>Continue</td>
+            <td>Continue content...</td>
+            <td><button onclick="selectPrompt('Continue')">Select</button></td>
+        </tr>
+    </tbody>
+</table>
+<p>Selected Prompt: 
+    <select id="selectedPrompt">
+        <!-- Options will be populated based on selected prompt -->
+    </select>
+</p>
+ <button onclick="embedSelectedPatients()">Embed Selected Patients</button>
+    <button onclick="embedAllPatients()">Embed All Patients</button>
+    <p id="embedStatus"></p>
+</div>
+
+<div class="step">
+<h2>Step 3: ChatGPT API</h2>
+ <p>Choose Model: 
+        <select id="modelChoice">
+            <option value="GPT3.5-Turbo">GPT3.5-Turbo</option>
+            <option value="GPT4">GPT4</option>
+        </select>
+<p>Enter ChatGPT API Key: <input type="password" id="apiKey" placeholder="API Key"> <button onclick="loadRandomAPI('apiKey')">Load API</button> <span id="apiKeyStatus" style="color:green; display:none;">Loaded Successfully!</span></p>
+<p>Temperature: <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.5" oninput="updateTemperatureValue(this.value)"> <span id="temperatureValue">0.5</span></p>
+<p>Send Loaded Prompts: 
+    <select id="numPromptsToSend">
+        <option value="1">1</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="40">40</option>
+        <option value="50">50</option>
+    </select>
+</p>
+<button onclick="sendPrompts()">Send Prompts</button> <span id="promptStatus" style="color:blue;"></span>
+<p>Send Specific Prompt: 
+    <select id="specificPrompt">
+        <option value="Continue">Continue</option>
+        <!-- Add other specific prompts if needed -->
+    </select>
+</p>
+<button onclick="sendSpecificPrompt()">Send Specific Prompt</button>
+<p>Frequency of Sending (Number of times): 
+    <select id="sendFrequency">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+    </select>
+</p>
+<button onclick="showHistory()">Show History of Sent Prompts</button>
+<button onclick="showLog()">Show Log of Sent Results</button>
+</div>
+
+<div class="step">
+    <h2>Step 4: ChatGPT Output</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Patient Name</th>
+            <th>Accession</th>
+            <th>Tests</th>
+            <th>Show Report</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>John Doe</td>
+            <td>ACC12345</td>
+            <td>Blood Test A, Blood Test B, Blood Test C</td>
+            <td><button>View Report</button></td>
+        </tr>
+        <tr>
+            <td>Jane Smith</td>
+            <td>ACC67890</td>
+            <td>Blood Test X, Blood Test Y, Blood Test Z</td>
+            <td><button>View Report</button></td>
+        </tr>
+    </tbody>
+</table>
+
+</div>
+
+<script>
+ function loadData() {
+        // Dummy data for the sake of this prototype
+        const data = [
+            { client: 'Client1', patient: 'John Doe', accession: 'ACC12345', tests: 'Blood Test A, Blood Test B, Blood Test C' },
+            { client: 'Client2', patient: 'Jane Smith', accession: 'ACC67890', tests: 'Blood Test X, Blood Test Y, Blood Test Z' },
+        ];
+
+        let tableContent = '';
+        for (let item of data) {
+            tableContent += `<tr>
+                <td><input type="checkbox"></td>
+                <td>${item.client}</td>
+                <td>${item.patient}</td>
+                <td>${item.accession}</td>
+                <td>${item.tests}</td>
+                <td><button>View JSON</button></td>
+            </tr>`;
+        }
+
+        document.getElementById('jsonTable').getElementsByTagName('tbody')[0].innerHTML = tableContent;
+    }
+
+    function embedSelectedPatients() {
+        document.getElementById('embedStatus').textContent = 'Selected patients embedded successfully!';
+    }
+
+    function embedAllPatients() {
+        document.getElementById('embedStatus').textContent = 'All patients embedded successfully!';
+    }
+
+    function selectPrompt(promptTitle) {
+        const dropdown = document.getElementById('selectedPrompt');
+        dropdown.innerHTML = `<option value="${promptTitle}">${promptTitle}</option>`;
+    }
+
+     function updateTemperatureValue(value) {
+        document.getElementById('temperatureValue').textContent = value;
+    }
+
+    function loadAPI(apiElementId) {
+        // For the sake of this prototype, just showing a success label
+        document.getElementById(apiElementId + 'Status').style.display = 'inline';
+    }
+
+    function sendPrompts() {
+        const numPrompts = document.getElementById('numPromptsToSend').value;
+        // For the sake of this prototype, just updating the prompt status label
+        document.getElementById('promptStatus').textContent = `Sent ${numPrompts} prompts successfully!`;
+    }
+
+    function sendSpecificPrompt() {
+        const specificPrompt = document.getElementById('specificPrompt').value;
+        // For the sake of this prototype, just updating the prompt status label
+        document.getElementById('promptStatus').textContent = `Sent ${specificPrompt} prompt successfully!`;
+    }
+
+    function showHistory() {
+        // Display the history of sent prompts
+        alert("History of Sent Prompts:\n\n[Sample History]");
+    }
+
+    function showLog() {
+        // Display the log of sent results
+        alert("Log of Sent Results:\n\n[Sample Log]");
+    }
+
+   function loadRandomAPI(apiElementId) {
+    // Generate a random number with at least 8 digits for the sake of this prototype
+    const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+    document.getElementById(apiElementId).value = randomNumber;
+    document.getElementById(apiElementId + 'Status').style.display = 'inline';
+}
+    
+</script>
+
+</body>
+</html>
