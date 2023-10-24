@@ -64,6 +64,70 @@
     span {
         margin-left: 10px;
     }
+
+    /* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover, .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Enhanced table styles */
+#reportTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+}
+
+#reportTable th {
+    background-color: #007BFF;
+    color: #fff;
+    padding: 12px 15px;
+}
+
+#reportTable td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ccc;
+}
+
+#reportTable tr:last-child td {
+    border-bottom: none;
+}
+
+.separator {
+    background-color: #007BFF;
+    color: #fff;
+    font-weight: bold;
+}
+
+
 </style>
 
 </head>
@@ -162,9 +226,9 @@
         <!-- Options will be populated based on selected prompt -->
     </select>
 </p>
- <button onclick="embedSelectedPatients()">Embed Selected Patients</button>
-    <button onclick="embedAllPatients()">Embed All Patients</button>
-    <p id="embedStatus"></p>
+ <center><button onclick="embedSelectedPatients()">Embed Selected Patients</button>
+    <button onclick="embedAllPatients()">Embed All Patients</button></center>
+    <center><p id="embedStatus"></p></center>
 </div>
 
 <div class="step">
@@ -186,15 +250,18 @@
         <option value="40">40</option>
         <option value="50">50</option>
     </select>
-</p>
+
 <button onclick="sendPrompts()">Send Prompts</button> <span id="promptStatus" style="color:blue;"></span>
+
 <p>Send Specific Prompt: 
     <select id="specificPrompt">
         <option value="Continue">Continue</option>
         <!-- Add other specific prompts if needed -->
     </select>
+    <button onclick="sendSpecificPrompt()">Send Specific Prompt</button>
 </p>
-<button onclick="sendSpecificPrompt()">Send Specific Prompt</button>
+
+
 <p>Frequency of Sending (Number of times): 
     <select id="sendFrequency">
         <option value="1">1</option>
@@ -204,38 +271,59 @@
         <option value="10">10</option>
     </select>
 </p>
-<button onclick="showHistory()">Show History of Sent Prompts</button>
-<button onclick="showLog()">Show Log of Sent Results</button>
+
+<label for="inputTokens">Input Tokens:</label>
+<input type="text" id="inputTokens" readonly><br><br>
+
+<label for="outputTokens">Output Tokens:</label>
+<input type="text" id="outputTokens" readonly><br><br>
+
+<label for="cost">Cost:</label>
+<input type="text" id="cost" readonly><br><br>
+
+
+<center><button onclick="showHistory()">Show History of Sent Prompts</button> <span><button onclick="showLog()">Show Log of Sent Results</button></center>
+
 </div>
 
 <div class="step">
     <h2>Step 4: ChatGPT Output</h2>
-<table>
-    <thead>
-        <tr>
-            <th>Patient Name</th>
-            <th>Accession</th>
-            <th>Tests</th>
-            <th>Show Report</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>John Doe</td>
-            <td>ACC12345</td>
-            <td>Blood Test A, Blood Test B, Blood Test C</td>
-            <td><button>View Report</button></td>
-        </tr>
-        <tr>
-            <td>Jane Smith</td>
-            <td>ACC67890</td>
-            <td>Blood Test X, Blood Test Y, Blood Test Z</td>
-            <td><button>View Report</button></td>
-        </tr>
-    </tbody>
-</table>
-
+    <table>
+        <thead>
+            <tr>
+                <th>Patient Name</th>
+                <th>Accession</th>
+                <th>Tests</th>
+                <th>Show Report</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>John Doe</td>
+                <td>ACC12345</td>
+                <td>Blood Test A, Blood Test B, Blood Test C</td>
+                <td><button onclick="showReport()">View Report</button></td>
+            </tr>
+            <tr>
+                <td>Jane Smith</td>
+                <td>ACC67890</td>
+                <td>Blood Test X, Blood Test Y, Blood Test Z</td>
+                <td><button onclick="showReport()">View Report</button></td>
+            </tr>
+        </tbody>
+    </table>
 </div>
+
+<!-- Modal for the report -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeReport()">&times;</span>
+        <table id="reportTable">
+            <!-- Table content will be populated by JavaScript -->
+        </table>
+    </div>
+</div>
+
 
 <script>
  function loadData() {
@@ -281,18 +369,45 @@
         // For the sake of this prototype, just showing a success label
         document.getElementById(apiElementId + 'Status').style.display = 'inline';
     }
+function sendPrompts() {
+    const frequency = parseInt(document.getElementById('numPromptsToSend').value);
+    generateTokensAndCost(frequency);
+    document.getElementById('promptStatus').textContent = `Sent ${frequency} Prompts Successfully!`;
+}
 
-    function sendPrompts() {
-        const numPrompts = document.getElementById('numPromptsToSend').value;
-        // For the sake of this prototype, just updating the prompt status label
-        document.getElementById('promptStatus').textContent = `Sent ${numPrompts} prompts successfully!`;
+function sendSpecificPrompt() {
+    generateTokensAndCost(1); // Since it's a specific prompt, we're sending just one prompt
+    const specificPrompt = document.getElementById('specificPrompt').value;
+    document.getElementById('promptStatus').textContent = `Specific Prompt "${specificPrompt}" Sent Successfully!`;
+}
+
+function generateTokensAndCost(frequency) {
+    const model = document.getElementById('modelChoice').value;
+
+    // Generate random values for input and output tokens between 150 to 600 each (so total is between 300 to 1200)
+    const inputTokens = Math.floor(Math.random() * 451 + 150) * frequency;
+    const outputTokens = Math.floor(Math.random() * 451 + 150) * frequency;
+
+    let inputTokenCost, outputTokenCost;
+
+    if (model === 'GPT3.5-Turbo') {
+        inputTokenCost = 0.0015;
+        outputTokenCost = 0.002;
+    } else {
+        inputTokenCost = 0.003;
+        outputTokenCost = 0.004;
     }
 
-    function sendSpecificPrompt() {
-        const specificPrompt = document.getElementById('specificPrompt').value;
-        // For the sake of this prototype, just updating the prompt status label
-        document.getElementById('promptStatus').textContent = `Sent ${specificPrompt} prompt successfully!`;
-    }
+    const totalCost = (inputTokens * inputTokenCost + outputTokens * outputTokenCost) / 1000;
+
+    // Display the values
+    document.getElementById('inputTokens').value = inputTokens;
+    document.getElementById('outputTokens').value = outputTokens;
+    document.getElementById('cost').value = '$' + totalCost.toFixed(6); // Displaying cost with 6 decimal numbers
+}
+
+// Rest of your functions remain unchanged...
+
 
     function showHistory() {
         // Display the history of sent prompts
@@ -310,6 +425,75 @@
     document.getElementById(apiElementId).value = randomNumber;
     document.getElementById(apiElementId + 'Status').style.display = 'inline';
 }
+
+function showReport() {
+    // Sample data
+    const data = {
+        "PatientDemographics": {
+            "PatientName": "JohnDoe123",
+            // ... rest of the data ...
+        },
+        "ProfilesAndIndividualTests": {
+            "TestServiceProfileName": "Complete Blood Count (CBC)",
+            // ... rest of the data ...
+        }
+    };
+
+    // Create the table content based on the data
+    let tableContent = `
+        <tr><th colspan="2">Patient Report</th></tr>
+        <tr><th>Client Name</th><td>Your Client Name Here</td></tr>
+        <tr><th>Patient Name</th><td>${data.PatientDemographics.PatientName}</td></tr>
+    `;
+
+    // Test 1
+    tableContent += `
+        <tr class="separator"><td colspan="2">Test 1</td></tr>
+        <tr><th>Test</th><td>Hemoglobin (Hb)</td></tr>
+        <tr><th>Test Result</th><td>14 g/dL</td></tr>
+        <tr><th>Ref. Range</th><td>13-17 g/dL (Males), 12-15 g/dL (Females)</td></tr>
+        <tr><th>Test 1 Interpretation</th><td>Within normal range.</td></tr>
+    `;
+
+    // Test 2
+    tableContent += `
+        <tr class="separator"><td colspan="2">Test 2</td></tr>
+        <tr><th>Test</th><td>Alanine Aminotransferase (ALT)</td></tr>
+        <tr><th>Test Result</th><td>45 U/L</td></tr>
+        <tr><th>Ref. Range</th><td>7-56 U/L</td></tr>
+        <tr><th>Test 2 Interpretation</th><td>Within normal range.</td></tr>
+    `;
+
+    // Test 3
+    tableContent += `
+        <tr class="separator"><td colspan="2">Test 3</td></tr>
+        <tr><th>Test</th><td>Creatinine</td></tr>
+        <tr><th>Test Result</th><td>1.2 mg/dL</td></tr>
+        <tr><th>Ref. Range</th><td>0.6-1.3 mg/dL</td></tr>
+        <tr><th>Test 3 Interpretation</th><td>Within normal range.</td></tr>
+    `;
+
+    // Conclusion and Lifestyle
+    tableContent += `
+        <tr class="separator"><td colspan="2">All Tests Conclusion</td></tr>
+        <tr><th>Interpretation</th><td>Based on the provided tests and their results, the patient's overall health appears to be within normal limits.</td></tr>
+        <tr><th>Lifestyle change</th><td>Maintain a balanced diet, regular exercise, and periodic health check-ups.</td></tr>
+    `;
+
+    // Insert the table content
+    document.getElementById('reportTable').innerHTML = tableContent;
+
+    // Display the modal
+    document.getElementById('reportModal').style.display = "block";
+}
+
+
+
+
+function closeReport() {
+    document.getElementById('reportModal').style.display = "none";
+}
+
     
 </script>
 
